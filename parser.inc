@@ -1305,7 +1305,7 @@ function _parser_get_page_by_url($url, $headers = array(), $charset = 'auto', $f
   }
   // Convert charset
   if (drupal_strtolower($charset) != 'utf-8' && $charset != 'auto') {
-    $page = iconv($charset, 'UTF-8//IGNORE', $page);
+    $page = utf8_encode($page);
     $page = str_ireplace(
       ' content="text/html; charset=' . $charset . '"',
       ' content="text/html; charset=utf-8"',
