@@ -126,6 +126,13 @@ function parser_schema() {
         'type' => 'text',
         'not null' => TRUE,
       ),
+      'check_all_remote_ids' => array(
+          'type' => 'int',
+          'size' => 'tiny',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
       'force_download' => array(
         'type' => 'int',
         'size' => 'tiny',
@@ -562,6 +569,19 @@ function parser_update_7219() {
     'default' => 0,
   ));
   db_add_field('parser_jobs', 'last_run', array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+  drupal_flush_all_caches();
+}
+
+/**
+ * Add new col to {parser_jobs}
+ */
+function parser_update_7220() {
+  db_add_field('parser_jobs', 'check_all_remote_ids', array(
     'type' => 'int',
     'unsigned' => TRUE,
     'not null' => TRUE,

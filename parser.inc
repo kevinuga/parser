@@ -397,14 +397,21 @@ function _parser_job_form_advanced_settings($job, $check_button) {
     '#description' => 'Отметьте, если не хотите обновлять сущности, созданные в предыдущие запуски этого задания.',
     '#default_value' => isset($job->no_update) ? $job->no_update : 0,
   );
-  
+
+  $form['advanced_settings']['check_all_remote_ids'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Проверять remote id из других заданий',
+    '#description' => 'Чтобы избежать дублей при парсинге одного и того же контента с разных сайтов',
+    '#default_value' => isset($job->check_all_remote_ids) ? $job->check_all_remote_ids : 0,
+  );
+
   $form['advanced_settings']['force_download'] = array(
     '#type' => 'checkbox',
     '#title' => 'Не брать страницы из кэша',
     '#description' => 'Отметьте, если хотите чтобы парсер скачивал страницы даже если они есть в кэше.',
     '#default_value' => isset($job->force_download) ? $job->force_download : 0,
   );
-  
+
   $form['advanced_settings']['force_download_list'] = array(
     '#type' => 'textarea',
     '#title' => 'Отключить кэш для следующих адресов',
@@ -556,7 +563,7 @@ function parser_job_form_submit(&$form, &$form_state) {
   if (!$form_state['values']['run_period']) {
     $form_state['values']['run_period'] = 0;
   }
-  
+
   $job = entity_ui_form_submit_build_entity($form, $form_state);
   $job->save();
 
@@ -708,7 +715,8 @@ function parser_parse($job, $redirect_to_job, &$context) {
     if ($job->remote_id_code) {
       $remote_id = eval($job->remote_id_code);
       if ($remote_id) {
-        $entity_id = parser_get_entity_id_by_remote_id($remote_id, $job->jid);
+        $jid = ($job->check_all_remote_ids) ? NULL : $job->jid;
+        $entity_id = parser_get_entity_id_by_remote_id($remote_id, $jid);
       }
     }
     if (!isset($entity_id)) {
