@@ -1329,12 +1329,12 @@ function _parser_get_page_by_url($url, $headers = array(), $charset = 'auto', $f
  */
 function _parser_download_url_to_cache($url, $headers = array(), $force_download = FALSE) {
   $cache_uri = 'public://parser_cache/' . md5($url);
-  
+
   if (!file_exists($cache_uri) || $force_download) {
     if (!empty($GLOBALS['parser']['sleep'])) {
       sleep($GLOBALS['parser']['sleep']);
     }
-    
+
     // Headers
     if (is_string($headers)) {
       $headers = _parser_get_headers_array($headers);
@@ -1345,10 +1345,14 @@ function _parser_download_url_to_cache($url, $headers = array(), $force_download
     $request_options = array('headers' => $headers);
 
     $result = drupal_http_request($url, $request_options);
+
+    // Processing redirect
     if ($result->code == 303 && !empty($result->headers['location'])) {
-      $result = drupal_http_request($result->headers['location'], $request_options);
+      $url = $result->headers['location'];
+      $result = drupal_http_request($url, $request_options);
     }
-    
+
+    // Check errors
     if (!empty($result->error)) {
       _parser_watchdog('Ошибка при закачке "' . check_plain($url) . '": ' . check_plain($result->error) . (isset($result->data) ? ', <b>Результат</b>: ' . check_plain(drupal_substr($result->data, 0, 1000)) : ''), NULL, WATCHDOG_ERROR);
       $GLOBALS['parser']['stat']['files_from_http_error']++;
@@ -1361,14 +1365,14 @@ function _parser_download_url_to_cache($url, $headers = array(), $force_download
       $GLOBALS['parser']['stat']['last_error_file'] = $url;
       return NULL;
     }
-    
+
     file_unmanaged_save_data($result->data, $cache_uri, FILE_EXISTS_REPLACE);
     $GLOBALS['parser']['stat']['files_from_http']++;
   }
   else {
     $GLOBALS['parser']['stat']['files_from_cache']++;
   }
-  
+
   return $cache_uri;
 }
 
@@ -1477,15 +1481,13 @@ function _parser_get_full_url($relative_url, $base_url) {
  * Return absolute url by base and relative url.
  */
 function parser_get_absolute_url($base_url, $relative_url) {
-  if (!function_exists('url_to_absolute')) {
-    require_once('AbsoluteUrl/url_to_absolute.php');
-  }
-  
+  require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'parser') . '/phpuri/phpuri.php';
+
   if (preg_match('#^[a-z]+://[^/]+$#', $base_url)) {
     $base_url .= '/';
   }
-  
-  return url_to_absolute($base_url, $relative_url);
+
+  return phpUri::parse($base_url)->join($relative_url);
 }
 
 /**
